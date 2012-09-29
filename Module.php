@@ -75,11 +75,6 @@ class Module implements
     public function getAutoloaderConfig()
     {
         return array(
-            'Zend\Loader\ClassMapAutoloader' => array(
-                array(
-                    'phpQuery' => __DIR__ . '/src/phpquery/phpQuery/phpQuery.php',
-                ),
-            ),
             'Zend\Loader\StandardAutoloader' => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,

@@ -28,6 +28,11 @@ class Zooming
     protected $selector = 'a.zoom > img';
     protected $xpath = '//a[@class="zoom"]/img';
 
+    /**
+     * for detect charset properly
+     * @var string
+     */
+    protected $htmlMeta = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8" /></head>';
 
     public function setOptions($config = array())
     {
@@ -41,19 +46,22 @@ class Zooming
         $thumbPath = 'public' . $thumbSrc;
         $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
         //or simpler:         $origPath = 'public' . $src;
-        $info = getimagesize($thumbPath);
         if (!file_exists($thumbPath)) {
             mkdir(dirname($thumbPath), 0777, true);
             $image = new SimpleImage();
             $image->load($origPath);
             $image->resize($width, $height);
             $image->save($thumbPath);
-        } elseif ($info->getType()) {
-            $image = new SimpleImage();
-            $image->load($origPath);
-            $image->resize($width, $height);
-            $image->save($thumbPath);
             return $thumbSrc;
+        } else {
+            $size = getimagesize($thumbPath);
+            if ($size[0] != $width || $size[1] != $height) {
+                $image = new SimpleImage();
+                $image->load($origPath);
+                $image->resize($width, $height);
+                $image->save($thumbPath);
+                return $thumbSrc;
+            }
         }
         return false;
     }
@@ -65,17 +73,15 @@ class Zooming
      */
     public function revert($content)
     {
-        $dom = new DOMDocument;
-        $dom->loadHTML($content);
+        $dom = new DOMDocument(null, 'utf-8');
+        $dom->loadHTML($this->htmlMeta . $content);
         $domXpath = new DOMXPath($dom);
         $images = $domXpath->query($this->xpath);
         if ($images->length == 0) return false;
         foreach ($images as $img) {
-            //if ($a->getAttribute('class') != $this->class) continue;
-            //$img = clone $a->firstChild;
             $a = $img->parentNode;
             $img->setAttribute('src', $a->getAttribute('href'));
-            //$img->setAttribute('class', $this->class);
+            //$img->setAttribute('class', $this->class);//@TODO: need add class zoom
             $a->parentNode->replaceChild($img, $a);
         }
         $body = $dom->getElementsByTagName('body')->item(0);
@@ -87,8 +93,8 @@ class Zooming
 
     public function convert($content)
     {
-        $dom = new DOMDocument();
-        $dom->loadHTML($content);
+        $dom = new DOMDocument(null, 'utf-8');
+        $dom->loadHTML($this->htmlMeta . $content);
         $images = $dom->getElementsByTagName('img');
         if ($images->length == 0) return false;
         foreach ($images as $img) {
