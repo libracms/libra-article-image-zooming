@@ -9,8 +9,7 @@ namespace LibraArticleImageZooming\Model;
 
 use DOMDocument;
 use DOMXPath;
-use phpQuery;
-use phpQueryObject;
+use SplFileInfo;
 
 /**
  * Description of Zooming
@@ -35,12 +34,6 @@ class Zooming
 
     }
 
-    public function prepare()
-    {
-        $filename = 'public/images/stories/_thumbnails';
-        if (!file_exists($filename)) mkdir($filename);
-    }
-
     public function createThumbnail($src, $width = null, $height = null)
     {
         list($basePath,$imagePath) = explode($this->imagesRootDir . '/' . $this->imagesDirName, $src);
@@ -48,7 +41,14 @@ class Zooming
         $thumbPath = 'public' . $thumbSrc;
         $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
         //or simpler:         $origPath = 'public' . $src;
+        $info = getimagesize($thumbPath);
         if (!file_exists($thumbPath)) {
+            mkdir(dirname($thumbPath), 0777, true);
+            $image = new SimpleImage();
+            $image->load($origPath);
+            $image->resize($width, $height);
+            $image->save($thumbPath);
+        } elseif ($info->getType()) {
             $image = new SimpleImage();
             $image->load($origPath);
             $image->resize($width, $height);
@@ -70,12 +70,6 @@ class Zooming
         $domXpath = new DOMXPath($dom);
         $images = $domXpath->query($this->xpath);
         if ($images->length == 0) return false;
-
-        //$anchors = $dom->getElementsByTagName('a');
-        //$anchors = $domXpath->query('//a');
-        //$images2 = $domXpath->query('a');
-        //if ($anchors->length == 0) return false;
-        //foreach ($anchors as $a) {
         foreach ($images as $img) {
             //if ($a->getAttribute('class') != $this->class) continue;
             //$img = clone $a->firstChild;
@@ -93,8 +87,6 @@ class Zooming
 
     public function convert($content)
     {
-        //$aa = $this->convert2($content);
-        $this->prepare();
         $dom = new DOMDocument();
         $dom->loadHTML($content);
         $images = $dom->getElementsByTagName('img');
@@ -123,39 +115,6 @@ class Zooming
         $newContent = $dom->saveXML($body);
         $newContent = str_replace('<body>', '', $newContent);
         $newContent = str_replace('</body>', '', $newContent);
-        //"/images/stories/images/Untitled1.jpg"
-        return $newContent;
-        //<p>&#13; setete<a href="/images/stories/images/Untitled1.jpg" class="zoom"><img alt="" src="/images/stories/images/Untitled1.jpg" style="width: 200px; height: 289px;"/></a></p>
-    }
-
-    public static function zooming($content)
-    {
-        static::prepare();
-        $dom = new DOMDocument();
-        $dom->loadHTML($content);
-        $imgs = $dom->getElementsByTagName('img');
-        if ($imgs->length == 0) return false;
-        foreach ($imgs as $img) {
-            $src = $img->getAttribute('src');
-            $style = $img->getAttribute('style');
-            preg_match('/width\s*:\s*(?P<width>\d+)px/', $style, $matches);//width: 200px; height: 289px;
-            $width  = $matches['width'];
-            preg_match('/height\s*:\s*(?P<height>\d+)px/', $style, $matches);
-            $height = $matches['height'];
-            $newSrc = static::createThumbnail($src, $width, $height);
-            if ($newSrc) $img->setAttribute('src', $newSrc);
-            if ($img->parentNode->tagName == 'a') continue;  //don't do if it has a link already
-            $a = $dom->createElement('a');
-            $a->setAttribute('href', $src);
-            $a->setAttribute('class', $this->class);
-            $a->appendChild(clone $img);
-            $img->parentNode->replaceChild($a, $img);
-        }
-        $body = $dom->getElementsByTagName('body')->item(0);
-        $newContent = $dom->saveXML($body);
-        $newContent = str_replace('<body>', '', $newContent);
-        $newContent = str_replace('</body>', '', $newContent);
-        //"/images/stories/images/Untitled1.jpg"
         return $newContent;
     }
 

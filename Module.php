@@ -32,8 +32,7 @@ class Module implements
                 $article = $e->getParam('article');
                 $controller = $e->getTarget();
                 $content = $article->getContent();
-                //$zooming = new Zooming($content);
-                //$newContent = Zooming::zooming($content);
+                /** @var $zooming Zooming */
                 $zooming = $controller->getServiceLocator()->get('LibraArticleImageZooming\Model\Zooming');
                 $newContent = $zooming->convert($content);
                 if ($newContent === false) return false; //don't save. Has no image
@@ -43,8 +42,8 @@ class Module implements
                 return true;
             };
             $funcPre = function($e) {
-                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
                 $data = $e->getParam('data');
+                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
                 $controller = $e->getTarget();
                 $content = $data['content'];
 
