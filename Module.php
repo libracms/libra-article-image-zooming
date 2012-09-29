@@ -27,17 +27,35 @@ class Module implements
     {
         $sharedManager = $e->getApplication()->getEventManager()->getSharedManager();
         $sharedManager->attach('LibraArticle\Controller\AdminArticleController', 'dispatch', function($e) {
+            $controller = $e->getTarget();
             $func = function($e) {
                 $article = $e->getParam('article');
+                $controller = $e->getTarget();
                 $content = $article->getContent();
-                $newContent = Zooming::zooming($content);
+                //$zooming = new Zooming($content);
+                //$newContent = Zooming::zooming($content);
+                $zooming = $controller->getServiceLocator()->get('LibraArticleImageZooming\Model\Zooming');
+                $newContent = $zooming->convert($content);
                 if ($newContent === false) return false; //don't save. Has no image
                 $article->setContent($newContent);
-                $controller = $e->getTarget();
+                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
                 $controller->getEntityManager()->flush($article);
                 return true;
             };
-            $controller = $e->getTarget();
+            $funcPre = function($e) {
+                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
+                $data = $e->getParam('data');
+                $controller = $e->getTarget();
+                $content = $data['content'];
+
+                $zooming = $controller->getServiceLocator()->get('LibraArticleImageZooming\Model\Zooming');
+                $newContent = $zooming->revert($content);
+                if ($newContent === false) return false; //don't save. Has no image
+                $data['content'] = $newContent;
+                $e->setParam('data', $data);
+                return true;
+            };
+            $controller->getEventManager()->attach('get', $funcPre);
             $controller->getEventManager()->attach('save.post', $func);
             //$controller->getEventManager()->attach('create.post', $up);
         }, 100);
@@ -47,8 +65,10 @@ class Module implements
     {
         return array(
             'invokables' => array(
+                //'LibraArticleImageZooming\Model\Zooming' => 'LibraArticleImageZooming\Model\Zooming',
             ),
             'factories' => array(
+                'LibraArticleImageZooming\Model\Zooming' => 'LibraArticleImageZooming\Service\ZoomingModelFactory',
             ),
         );
     }
