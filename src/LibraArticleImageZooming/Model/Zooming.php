@@ -9,6 +9,8 @@ namespace LibraArticleImageZooming\Model;
 
 use DOMDocument;
 use DOMXPath;
+use phpQuery;
+use phpQueryObject;
 
 /**
  * Description of Zooming
@@ -24,7 +26,8 @@ class Zooming
     protected $class = 'zoom';
 
     protected $content;
-    protected $xpath = 'a.zoom > img';
+    protected $selector = 'a.zoom > img';
+    protected $xpath = '//a[@class="zoom"]/img';
 
 
     public function setOptions($config = array())
@@ -38,12 +41,12 @@ class Zooming
         if (!file_exists($filename)) mkdir($filename);
     }
 
-    public static function createThumbnail($src, $width = null, $height = null)
+    public function createThumbnail($src, $width = null, $height = null)
     {
-        list($basePath,$imagePath) = explode(static::$imagesRootDir . '/' . static::$imagesDirName, $src);
-        $thumbSrc = static::$imagesRootDir . '/' . static::$thumbnailDirName . $imagePath;;
+        list($basePath,$imagePath) = explode($this->imagesRootDir . '/' . $this->imagesDirName, $src);
+        $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . $imagePath;;
         $thumbPath = 'public' . $thumbSrc;
-        $origPath = 'public' . static::$imagesRootDir . '/' . static::$imagesDirName . $imagePath;
+        $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
         //or simpler:         $origPath = 'public' . $src;
         if (!file_exists($thumbPath)) {
             $image = new SimpleImage();
@@ -62,19 +65,21 @@ class Zooming
      */
     public function revert($content)
     {
-        $this->content = $content;
         $dom = new DOMDocument;
         $dom->loadHTML($content);
-        //$dom->getElementsByTagName('a > img');
         $domXpath = new DOMXPath($dom);
-        $anchors = $dom->getElementsByTagName('a');
+        $images = $domXpath->query($this->xpath);
+        if ($images->length == 0) return false;
 
-        //$images = $domXpath->query($this->xpath);
+        //$anchors = $dom->getElementsByTagName('a');
+        //$anchors = $domXpath->query('//a');
         //$images2 = $domXpath->query('a');
-        if ($anchors->length == 0) return false;
-        foreach ($anchors as $a) {
+        //if ($anchors->length == 0) return false;
+        //foreach ($anchors as $a) {
+        foreach ($images as $img) {
             //if ($a->getAttribute('class') != $this->class) continue;
-            $img = clone $a->firstChild;
+            //$img = clone $a->firstChild;
+            $a = $img->parentNode;
             $img->setAttribute('src', $a->getAttribute('href'));
             //$img->setAttribute('class', $this->class);
             $a->parentNode->replaceChild($img, $a);
@@ -83,25 +88,29 @@ class Zooming
         $newContent = $dom->saveXML($body);
         $newContent = str_replace('<body>', '', $newContent);
         $newContent = str_replace('</body>', '', $newContent);
-        //"/images/stories/images/Untitled1.jpg"
         return $newContent;
     }
 
     public function convert($content)
     {
+        //$aa = $this->convert2($content);
         $this->prepare();
         $dom = new DOMDocument();
         $dom->loadHTML($content);
-        $imgs = $dom->getElementsByTagName('img');
-        if ($imgs->length == 0) return false;
-        foreach ($imgs as $img) {
+        $images = $dom->getElementsByTagName('img');
+        if ($images->length == 0) return false;
+        foreach ($images as $img) {
+            //test for containing class 'zoom'
+            $class = $img->getAttribute('class');
+            if (!preg_match("/\s?$this->class\s?/", $class)) continue;
+            
             $src = $img->getAttribute('src');
             $style = $img->getAttribute('style');
             preg_match('/width\s*:\s*(?P<width>\d+)px/', $style, $matches);//width: 200px; height: 289px;
             $width  = $matches['width'];
             preg_match('/height\s*:\s*(?P<height>\d+)px/', $style, $matches);
             $height = $matches['height'];
-            $newSrc = static::createThumbnail($src, $width, $height);
+            $newSrc = $this->createThumbnail($src, $width, $height);
             if ($newSrc) $img->setAttribute('src', $newSrc);
             if ($img->parentNode->tagName == 'a') continue;  //don't do if it has a link already
             $a = $dom->createElement('a');
