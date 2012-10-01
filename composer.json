@@ -2,8 +2,8 @@
     "name":         "libra/libra-article-image-zooming",
     "type":         "library",
     "version":      "0.3.0",
-    "description":  "Add skeleton module to Libra CMS",
-    "keywords":     ["zf", "zf2", "zendframework", "cms", "libra"],
+    "description":  "Add image zooming in articles of Libra CMS",
+    "keywords":     ["zf", "zf2", "zendframework", "cms", "libra", "zooming"],
     "homepage":     "http://www.libra-cms.ejoom.com",
     "time":         "2012-05-16",
     "licence":      "BSD-3-Clause",
@@ -13,7 +13,8 @@
 
     "require": {
         "php":                              ">=5.3.3",
-        "libra/libra-app":                  "dev-default"
+        "libra/libra-app":                  "dev-default",
+        "libra/fancybox-assets":            "dev-default"
     },
 
     "require-dev": {

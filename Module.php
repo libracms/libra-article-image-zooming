@@ -26,22 +26,26 @@ class Module implements
     public function onBootstrap(MvcEvent $e)
     {
         $sharedManager = $e->getApplication()->getEventManager()->getSharedManager();
+        $sharedManager->attach('LibraArticle\Controller\ArticleController', 'dispatch', function($e) {
+            //add fancybox to article view
+            $controller = $e->getTarget();
+            $controller->getEventManager()->attach('view', function($e) {
+                $controller = $e->getTarget();
+                $phpRenderer = $controller->getServiceLocator()->get('ViewRenderer');
+                $basePath = $phpRenderer->basePath();
+                $phpRenderer->headLink()->appendStylesheet($basePath . '/vendor/libra/fancybox-assets/source/jquery.fancybox.css');
+                $phpRenderer->headScript()->appendFile($basePath . '/vendor/libra/fancybox-assets/source/jquery.fancybox.js');
+                $phpRenderer->inlineScript()->appendScript(
+                    "jQuery('document').ready(function($) {
+                        $('.content a.zoom').fancybox();
+                    });"
+                );
+            });
+        }, 100);
+
         $sharedManager->attach('LibraArticle\Controller\AdminArticleController', 'dispatch', function($e) {
             $controller = $e->getTarget();
-            $func = function($e) {
-                $article = $e->getParam('article');
-                $controller = $e->getTarget();
-                $content = $article->getContent();
-                /** @var $zooming Zooming */
-                $zooming = $controller->getServiceLocator()->get('LibraArticleImageZooming\Model\Zooming');
-                $newContent = $zooming->convert($content);
-                if ($newContent === false) return false; //don't save. Has no image
-                $article->setContent($newContent);
-                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
-                $controller->getEntityManager()->flush($article);
-                return true;
-            };
-            $funcPre = function($e) {
+            $clearAnchors = function($e) {
                 $data = $e->getParam('data');
                 /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
                 $controller = $e->getTarget();
@@ -54,9 +58,22 @@ class Module implements
                 $e->setParam('data', $data);
                 return true;
             };
-            $controller->getEventManager()->attach('get', $funcPre);
-            $controller->getEventManager()->attach('save.post', $func);
-            //$controller->getEventManager()->attach('create.post', $up);
+            $addAnchors = function($e) {
+                $article = $e->getParam('article');
+                $controller = $e->getTarget();
+                $content = $article->getContent();
+                /** @var $zooming Zooming */
+                $zooming = $controller->getServiceLocator()->get('LibraArticleImageZooming\Model\Zooming');
+                $newContent = $zooming->convert($content);
+                if ($newContent === false) return false; //don't save. Has no image
+                $article->setContent($newContent);
+                //$controller->
+                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
+                $controller->getEntityManager()->flush($article);
+                return true;
+            };
+            $controller->getEventManager()->attach('get', $clearAnchors);
+            $controller->getEventManager()->attach('save.post', $addAnchors);
         }, 100);
     }
 

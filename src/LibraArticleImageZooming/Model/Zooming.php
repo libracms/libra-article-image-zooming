@@ -9,7 +9,6 @@ namespace LibraArticleImageZooming\Model;
 
 use DOMDocument;
 use DOMXPath;
-use SplFileInfo;
 
 /**
  * Description of Zooming
@@ -52,7 +51,7 @@ class Zooming
             $image->load($origPath);
             $image->resize($width, $height);
             $image->save($thumbPath);
-            return $thumbSrc;
+            //return $thumbSrc;
         } else {
             $size = getimagesize($thumbPath);
             if ($size[0] != $width || $size[1] != $height) {
@@ -60,10 +59,11 @@ class Zooming
                 $image->load($origPath);
                 $image->resize($width, $height);
                 $image->save($thumbPath);
-                return $thumbSrc;
+                //return $thumbSrc;
             }
         }
-        return false;
+        return $thumbSrc;
+        //return false;
     }
 
     /**
@@ -81,7 +81,7 @@ class Zooming
         foreach ($images as $img) {
             $a = $img->parentNode;
             $img->setAttribute('src', $a->getAttribute('href'));
-            //$img->setAttribute('class', $this->class);//@TODO: need add class zoom
+            $img->setAttribute('class', $this->class);//@TODO: need add class zoom
             $a->parentNode->replaceChild($img, $a);
         }
         $body = $dom->getElementsByTagName('body')->item(0);
@@ -101,6 +101,7 @@ class Zooming
             //test for containing class 'zoom'
             $class = $img->getAttribute('class');
             if (!preg_match("/\s?$this->class\s?/", $class)) continue;
+            if ($img->parentNode->nodeName == 'a') continue;  //don't do if it has a link already
             
             $src = $img->getAttribute('src');
             $style = $img->getAttribute('style');
@@ -109,12 +110,16 @@ class Zooming
             preg_match('/height\s*:\s*(?P<height>\d+)px/', $style, $matches);
             $height = $matches['height'];
             $newSrc = $this->createThumbnail($src, $width, $height);
-            if ($newSrc) $img->setAttribute('src', $newSrc);
-            if ($img->parentNode->tagName == 'a') continue;  //don't do if it has a link already
+            //if (false === $newSrc) continue; //some error
+            $imgNew = clone $img;
+            $imgNew->setAttribute('src', $newSrc);
+            $imgNew->setAttribute('class', str_replace($this->class, '', $class));
             $a = $dom->createElement('a');
+            $a->appendChild($imgNew);
             $a->setAttribute('href', $src);
             $a->setAttribute('class', $this->class);
-            $a->appendChild(clone $img);
+            $a->setAttribute('data-fancybox-group', 'gallery');
+            $a->setAttribute('title', $img->getAttribute('title'));
             $img->parentNode->replaceChild($a, $img);
         }
         $body = $dom->getElementsByTagName('body')->item(0);
