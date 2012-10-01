@@ -109,6 +109,9 @@ class Zooming
             $width  = $matches['width'];
             preg_match('/height\s*:\s*(?P<height>\d+)px/', $style, $matches);
             $height = $matches['height'];
+            //if not set any parameter don't touch
+            if (!$width && !$height) continue;
+
             $newSrc = $this->createThumbnail($src, $width, $height);
             //if (false === $newSrc) continue; //some error
             $imgNew = clone $img;
