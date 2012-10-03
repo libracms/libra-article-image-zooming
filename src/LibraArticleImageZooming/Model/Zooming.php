@@ -108,8 +108,10 @@ class Zooming
             $src = $img->getAttribute('src');
             $style = $img->getAttribute('style');
             preg_match('/width\s*:\s*(?P<width>\d+)px/', $style, $matches);//width: 200px; height: 289px;
+            if (empty($matches)) continue;
             $width  = $matches['width'];
             preg_match('/height\s*:\s*(?P<height>\d+)px/', $style, $matches);
+            if (empty($matches)) continue;
             $height = $matches['height'];
             //if not set any parameter don't touch
             if (!$width && !$height) continue;
