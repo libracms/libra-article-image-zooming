@@ -44,6 +44,8 @@ class Zooming
         $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . $imagePath;;
         $thumbPath = 'public' . $thumbSrc;
         $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
+        $origSize = getimagesize($origPath);
+        if ($origSize[0] == $width && $origSize[1] == $height) return false; //the same width hence do nothing
         //or simpler:         $origPath = 'public' . $src;
         if (!file_exists($thumbPath)) {
             mkdir(dirname($thumbPath), 0777, true);
@@ -99,8 +101,8 @@ class Zooming
         if ($images->length == 0) return false;
         foreach ($images as $img) {
             //test for containing class 'zoom'
-            $class = $img->getAttribute('class');
-            if (!preg_match("/\s?$this->class\s?/", $class)) continue;
+            //$class = $img->getAttribute('class');
+            //if (!preg_match("/\s?$this->class\s?/", $class)) continue;
             if ($img->parentNode->nodeName == 'a') continue;  //don't do if it has a link already
             
             $src = $img->getAttribute('src');
@@ -113,10 +115,10 @@ class Zooming
             if (!$width && !$height) continue;
 
             $newSrc = $this->createThumbnail($src, $width, $height);
-            //if (false === $newSrc) continue; //some error
+            if (false === $newSrc) continue; //some error or no need thumbnail
             $imgNew = clone $img;
             $imgNew->setAttribute('src', $newSrc);
-            $imgNew->setAttribute('class', str_replace($this->class, '', $class));
+            //$imgNew->setAttribute('class', str_replace($this->class, '', $class));
             $a = $dom->createElement('a');
             $a->appendChild($imgNew);
             $a->setAttribute('href', $src);
