@@ -40,10 +40,18 @@ class Zooming
 
     public function createThumbnail($src, $width = null, $height = null)
     {
-        list($basePath,$imagePath) = explode($this->imagesRootDir . '/' . $this->imagesDirName, $src);
-        $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . $imagePath;;
-        $thumbPath = 'public' . $thumbSrc;
-        $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
+        $src = urldecode($src);
+        if (preg_match('%https?://(?P<path>.*)%', $src, $matches)) {
+            $origPath = $src;
+            $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . '/' . $matches['path'];
+            $thumbPath = 'public' . $thumbSrc;
+        }
+        else {
+            list($basePath,$imagePath) = explode($this->imagesRootDir . '/' . $this->imagesDirName, $src);
+            $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . $imagePath;;
+            $thumbPath = 'public' . $thumbSrc;
+            $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
+        }
         $origSize = getimagesize($origPath);
         if ($origSize[0] == $width && $origSize[1] == $height) return false; //the same width hence do nothing
         //or simpler:         $origPath = 'public' . $src;
