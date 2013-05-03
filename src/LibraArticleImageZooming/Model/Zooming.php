@@ -17,7 +17,7 @@ use DOMXPath;
  */
 class Zooming
 {
-    protected $imagesRootDir    = '/images/stories';
+    protected $imagesRootDir    = '/stories';
     protected $thumbnailDirName = '_thumbnails';
     protected $imagesDirName    = 'images';
     protected $basePath = null;
