@@ -1,6 +1,6 @@
 {
     "name":         "libra/libra-article-image-zooming",
-    "type":         "library",
+    "type":         "zf-module",
     "description":  "Add image zooming in articles of Libra CMS",
     "keywords":     ["zf", "zf2", "zendframework", "cms", "libra", "zooming"],
     "homepage":     "http://www.ejoom.com/libra-cms/",
@@ -11,24 +11,12 @@
 
     "require": {
         "php":                              ">=5.3.3",
-        "libra/libra-app":                  "dev-master",
-        "libra/fancybox-assets":            "dev-master"
-    },
-
-    "require-dev": {
-
+        "libra/libra-article":              "dev-master",
+        "libra/fancybox-assets":            "2.*"
     },
 
     "autoload": {
         "psr-0": {"LibraArticleImageZooming\\": "src/"},
         "classmap": ["Module.php"]
-    },
-
-    "provide": {
-    },
-
-    "sugest": {
-
     }
-
 }
