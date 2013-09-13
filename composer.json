@@ -11,12 +11,18 @@
 
     "require": {
         "php":                              ">=5.3.3",
-        "libra/libra-article":              "dev-master",
+        "libra/libra-article":              "~0.3",
         "libra/fancybox-assets":            "2.*"
     },
 
     "autoload": {
         "psr-0": {"LibraArticleImageZooming\\": "src/"},
         "classmap": ["Module.php"]
+    },
+
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.3.x-dev"
+        }
     }
 }
