@@ -67,9 +67,8 @@ class Module implements
                 $newContent = $zooming->convert($content);
                 if ($newContent === false) return false; //don't save. Has no image
                 $article->setContent($newContent);
-                //$controller->
-                /** @var $controller \Zend\Mvc\Controller\AbstractActionController */
-                $controller->getEntityManager()->flush($article);
+
+                // Return true to save it
                 return true;
             };
             $controller->getEventManager()->attach('get', $clearAnchors);
