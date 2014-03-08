@@ -55,7 +55,6 @@ class Module implements
                 $newContent = $zooming->revert($content);
                 if ($newContent === false) return false; //don't save. Has no image
                 $data['content'] = $newContent;
-                $e->setParam('data', $data);
                 return true;
             };
             $addAnchors = function($e) {
@@ -64,7 +63,11 @@ class Module implements
                 $content = $article->getContent();
                 /** @var $zooming Zooming */
                 $zooming = $controller->getServiceLocator()->get('LibraArticleImageZooming\Model\Zooming');
-                $newContent = $zooming->convert($content);
+                $uniqueId = $article->getId();
+                if ($article->getLocale() != '') {
+                    $uniqueId .= '_' . $article->getLocale();
+                }
+                $newContent = $zooming->convert($content, $uniqueId);
                 if ($newContent === false) return false; //don't save. Has no image
                 $article->setContent($newContent);
 

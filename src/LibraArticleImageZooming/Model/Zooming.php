@@ -38,30 +38,62 @@ class Zooming
 
     }
 
-    public function createThumbnail($src, $width = null, $height = null)
+    /**
+     * Divide path to name and extension
+     * Append number of image
+     * If present suffix also prepend it
+     *
+     * @param string $imagePath
+     * @param id $suffix
+     * @param null|int $count
+     * @return string
+     */
+    public function formUniquePath($imagePath, $count, $suffix = null)
+    {
+        $imagePathName = substr($imagePath, 0, -4);
+        $imageExt = substr($imagePath, -3, 3);
+        $prefix = "_$count";
+        if ($suffix !== null) {
+            $prefix = "_$suffix" . $prefix;
+        }
+        $imagePath = $imagePathName . $prefix . '.' . $imageExt;
+        return $imagePath;
+    }
+
+    /**
+     *
+     * @param string $src
+     * @param int $width
+     * @param int $height
+     * @param id $suffix
+     * @param int $count
+     * @return string|boolean
+     */
+    public function createThumbnail($src, $width = null, $height = null, $count = null, $suffix = null)
     {
         $src = urldecode($src);
         if (preg_match('%https?://(?P<path>.*)%', $src, $matches)) {
             $origPath = $src;
             $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . '/' . $matches['path'];
-            $thumbPath = 'public' . $thumbSrc;
-        }
-        else {
+        } else {
             list($basePath,$imagePath) = explode($this->imagesRootDir . '/' . $this->imagesDirName, $src);
             $thumbSrc = $this->imagesRootDir . '/' . $this->thumbnailDirName . $imagePath;;
-            $thumbPath = 'public' . $thumbSrc;
             $origPath = 'public' . $this->imagesRootDir . '/' . $this->imagesDirName . $imagePath;
         }
+        if ($count !== null) {
+            $thumbSrc = $this->formUniquePath($thumbSrc, $count, $suffix);
+        }
+        $thumbPath = 'public' . $thumbSrc;
         $origSize = getimagesize($origPath);
-        if ($origSize[0] == $width && $origSize[1] == $height) return false; //the same width hence do nothing
-        //or simpler:         $origPath = 'public' . $src;
+        if ($origSize[0] == $width && $origSize[1] == $height) {
+            return false; //the same width hence do nothing
+        }
         if (!file_exists($thumbPath)) {
             mkdir(dirname($thumbPath), 0777, true);
             $image = new SimpleImage();
             $image->load($origPath);
             $image->resize($width, $height);
             $image->save($thumbPath);
-            //return $thumbSrc;
         } else {
             $size = getimagesize($thumbPath);
             if ($size[0] != $width || $size[1] != $height) {
@@ -69,11 +101,9 @@ class Zooming
                 $image->load($origPath);
                 $image->resize($width, $height);
                 $image->save($thumbPath);
-                //return $thumbSrc;
             }
         }
         return $thumbSrc;
-        //return false;
     }
 
     /**
@@ -101,18 +131,24 @@ class Zooming
         return $newContent;
     }
 
-    public function convert($content)
+    /**
+     *
+     * @param string $content
+     * @param string $suffix For generation unique thumbnail
+     * @return boolean
+     */
+    public function convert($content, $suffix = null)
     {
         $dom = new DOMDocument(null, 'utf-8');
         $dom->loadHTML($this->htmlMeta . $content);
         $images = $dom->getElementsByTagName('img');
         if ($images->length == 0) return false;
-        foreach ($images as $img) {
+        foreach ($images as $imgNumber => $img) {
             //test for containing class 'zoom'
             //$class = $img->getAttribute('class');
             //if (!preg_match("/\s?$this->class\s?/", $class)) continue;
             if ($img->parentNode->nodeName == 'a') continue;  //don't do if it has a link already
-            
+
             $src = $img->getAttribute('src');
             $style = $img->getAttribute('style');
             preg_match('/width\s*:\s*(?P<width>\d+)px/', $style, $matches);//width: 200px; height: 289px;
@@ -124,7 +160,7 @@ class Zooming
             //if not set any parameter don't touch
             if (!$width && !$height) continue;
 
-            $newSrc = $this->createThumbnail($src, $width, $height);
+            $newSrc = $this->createThumbnail($src, $width, $height, $imgNumber, $suffix);
             if (false === $newSrc) continue; //some error or no need thumbnail
             $imgNew = clone $img;
             $imgNew->setAttribute('src', $newSrc);
